@@ -1,0 +1,5 @@
+resolver: lts-13.17
+flags: {}
+extra-deps:
+  - git: https://github.com/phheim/folhs.git 
+    commit: 2f8c10e849163807c612d682a8ea68df147617e9
