@@ -200,6 +200,7 @@ reachables g l = bfs empty (l `pushOne` OL.empty)
             let seen' = o `insert` seen
              in bfs seen' ((succs g o `difference` seen) `push` ol')
 
+-- TODO: this breaks the invariants
 pruneUnreachables :: Game -> Game
 pruneUnreachables g =
   let reach = reachables g (initial g)

@@ -10,8 +10,8 @@ import RPGS.Parser
 import RPGS.Writer
 
 import Data.Map.Strict ((!))
-import qualified Data.Map.Strict as Map (empty, fromList, insert, toList)
-import Data.Maybe (fromJust)
+import qualified Data.Map.Strict as Map (empty, fromListWithKey, insert, toList)
+import Data.Maybe (fromMaybe)
 import Data.Set (cartesianProduct)
 import qualified Data.Set as Set (map)
 import System.Environment (getArgs)
@@ -25,21 +25,26 @@ gameProduct2 (g1, wc1) (g2, wc2)
  =
   let gA =
         foldl
-          (\g v -> fromJust $ addInput g v (ioType g2 ! v))
+          (\g v -> fromMaybe g $ addInput g v (ioType g2 ! v))
           emptyGame
           (inputs g2)
       gB =
-        foldl (\g v -> fromJust $ addInput g v (ioType g1 ! v)) gA (inputs g1)
+        foldl
+          (\g v -> fromMaybe g $ addInput g v (ioType g1 ! v))
+          gA
+          (inputs g1)
       gC =
         foldl
           (\g v ->
-             fromJust $ addOutput g v (ioType g2 ! v) (v `elem` boundedCells g2))
+             fromMaybe g $
+             addOutput g v (ioType g2 ! v) (v `elem` boundedCells g2))
           gB
           (outputs g2)
       gD =
         foldl
           (\g v ->
-             fromJust $ addOutput g v (ioType g1 ! v) (v `elem` boundedCells g1))
+             fromMaybe g $
+             addOutput g v (ioType g1 ! v) (v `elem` boundedCells g1))
           gC
           (outputs g1)
         -- add locations
@@ -57,7 +62,7 @@ gameProduct2 (g1, wc1) (g2, wc2)
       gH =
         foldl
           (\g (l1, l2) ->
-             fromJust $
+             fromMaybe g $
              addTransition
                g
                (mp ! (l1, l2))
@@ -70,13 +75,13 @@ gameProduct2 (g1, wc1) (g2, wc2)
           (Safety s1, Safety s2) ->
             Safety $ Set.map (mp !) (cartesianProduct s1 s2)
           _ -> error "Only safety is allowed for now"
-   in (pruneUnreachables gH, wc)
+   in (gH, wc)
   where
     multLocs (g, mp) (l1, l2) =
       let (g', l) =
             addLocation
               g
-              ((locationNames g1 ! l1) ++ "_" ++ (locationNames g2 ! l2))
+              ((locationNames g1 ! l1) ++ "__" ++ (locationNames g2 ! l2))
        in (g', Map.insert (l1, l2) l mp)
     --
     mergeTrans mp t1 =
@@ -92,7 +97,16 @@ gameProduct2 (g1, wc1) (g2, wc2)
             | (u1, l1) <- upd1
             , (u2, l2) <- upd2
             ]
-    mergeUpds u1 u2 = Map.fromList (Map.toList u2 ++ Map.toList u1)
+    mergeUpds u1 u2 =
+      Map.fromListWithKey
+        (\var old new ->
+           case old of
+             Var var' _ ->
+               if var == var'
+                 then new
+                 else old
+             _ -> old)
+        (Map.toList u1 ++ Map.toList u2)
 
 gameProduct :: [(Game, WinningCondition)] -> (Game, WinningCondition)
 gameProduct =
