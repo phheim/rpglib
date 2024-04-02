@@ -5,6 +5,7 @@ default:
 	@mkdir -p builds
 	@cp ${STACKPATH}/bin/rpgprint builds/rpgprint
 	@cp ${STACKPATH}/bin/rpgencode builds/rpgencode
+	@cp ${STACKPATH}/bin/rpgcross builds/rpgcross
 
 clean:
 	stack clean
