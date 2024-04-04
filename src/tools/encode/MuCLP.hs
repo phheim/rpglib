@@ -5,6 +5,7 @@ module MuCLP
   ( convert
   ) where
 
+import Data.Ratio ((%))
 import Data.Fixed
 import Data.Map ((!), (!?))
 import Data.Set (Set)
@@ -67,6 +68,9 @@ encTerm ugly =
           | n == "-" && length args == 1 ->
             "(- " ++ encTerm ugly (head args) ++ ")"
           | n `elem` ["-", "=", "<", ">", ">=", "<=", "*"] -> binOp n args
+          | n == "/" -> case args of
+                            [Const (CInt c1), Const (CInt c2)] -> encConst ugly (CReal (c1 % c2))
+                            _ -> error  (n ++ " only supported for constants")
           | otherwise -> error (n ++ " not supported yet")
     Quant _ _ _ -> error "Not supported"
     Lambda _ _ -> error "Not supported"
